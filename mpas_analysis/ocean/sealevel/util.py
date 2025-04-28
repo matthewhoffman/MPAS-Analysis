@@ -708,7 +708,7 @@ def validate_dataset(dset, reference=False, strict=True, additional_vars=None):
     # check that reference dset does not contain a time dimension
     if reference:
         try:
-            assert "time" not in [
+            assert "Time" not in [
                 x.lower for x in list(dset.coords)
             ], "Reference dataset cannot contain a time coordinate"
         except AssertionError as e:
@@ -741,7 +741,7 @@ def validate_dataset(dset, reference=False, strict=True, additional_vars=None):
         exceptions.append(e)
 
     # check for dimensionality of 3D vars
-    ranks = (3, "(z,y,x)") if reference else (4, ("t,z,y,x"))
+    ranks = (2, "(x,z)") if reference else (3, ("t,x,z"))
     for var in ["thetao", "so", "volcello"]:
         if var in dset.variables:
             try:
@@ -756,8 +756,8 @@ def validate_dataset(dset, reference=False, strict=True, additional_vars=None):
         if var in dset.variables:
             try:
                 assert (
-                    len(dset[var].dims) == 2
-                ), f"Variable {var} must have exactly 2 dimensions (y,x)"
+                    len(dset[var].dims) == 1
+                ), f"Variable {var} must have exactly 1 dimension (nCells)"
             except AssertionError as e:
                 exceptions.append(e)
 
@@ -778,8 +778,8 @@ def validate_dataset(dset, reference=False, strict=True, additional_vars=None):
         if "rho" not in missing:
             try:
                 assert (
-                    len(dset["rho"].dims) == 3
-                ), "Variable areacello must have exactly 3 dimensions (z,y,x)"
+                    len(dset["rho"].dims) == 2
+                ), "Variable rho must have exactly 2 dimensions (x,z)"
             except AssertionError as e:
                 exceptions.append(e)
 

@@ -13,7 +13,7 @@ __all__ = ["setup_reference_state"]
 
 
 def setup_reference_state(
-    dset, patm=101325.0, eos="Wright", coord_names=None, time_index=0
+    dset, patm=101325.0, eos="Wright", coord_names=None, time_index=0, do_calc_rho=False
 ):
     """Function to generate reference dataset
 
@@ -46,12 +46,8 @@ def setup_reference_state(
     """
 
     # default coordinate names
-    coords = default_coords(coord_names)
-    tcoord = coords[0]
-    zcoord = coords[1]
-
-    # approximate pressure from depth coordinate
-    pres = (dset[zcoord] * 1.0e4) + patm
+    tcoord = 'Time'
+    zcoord = 'nVertLevels'
 
     # initialize reference dataset
     reference = xr.Dataset()
@@ -68,16 +64,28 @@ def setup_reference_state(
     )
 
     # calculate in situ reference density
-    reference["rho"] = calc_rho(reference.thetao, reference.so, pres, eos=eos)
+    if do_calc_rho:
+        # approximate pressure from depth coordinate
+        pres = (dset[zcoord] * 1.0e4) + patm
+        print(f'theta={reference["thetao"].values.min()}, so={reference["so"].values.min()}, pres={pres.values.min()}')
+        reference["rho"] = calc_rho(reference.thetao, reference.so, pres, eos=eos)
+    else:
+        reference["rho"] = (
+            dset["rho"].isel({tcoord: time_index}).squeeze().reset_coords(drop=True)
+    )
+    print(f'rho min={reference["rho"].values.min()}, max={reference["rho"].values.max()}')
 
     # calculate global ocean volume
     reference["volo"] = calc_volo(reference.volcello)
+    print(f'reference volo={reference["volo"].values}')
 
     # calculate global ocean mass
     reference["masso"] = calc_masso(reference.rho, reference.volcello, tcoord=tcoord)
+    print(f'reference masso={reference["masso"].values}')
 
     # calculate global average in situ density
     reference["rhoga"] = calc_rhoga(reference.masso, reference.volo)
+    print(f'reference rhoga={reference["rhoga"].values}')
 
     # copy the reference cell area
     reference["areacello"] = dset.areacello

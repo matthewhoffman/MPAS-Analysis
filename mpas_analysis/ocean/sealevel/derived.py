@@ -784,7 +784,7 @@ def calc_volo(volcello):
     """
 
     # check dimensionality
-    assert len(volcello.dims) == 3, "Expecting only 3 dimensions for volcello"
+    assert len(volcello.dims) == 2, "Expecting only 2 dimensions for volcello"
 
     volo = volcello.sum()
     volo.attrs = {

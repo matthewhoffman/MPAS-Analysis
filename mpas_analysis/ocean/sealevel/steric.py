@@ -13,7 +13,6 @@ from momlevel.util import validate_dataset
 
 __all__ = ["halosteric", "steric", "thermosteric"]
 
-
 def steric(
     dset,
     reference=None,
@@ -28,6 +27,7 @@ def steric(
     strict=True,
     annual=False,
     verbose=False,
+    do_calc_rho=False
 ):
     """Function to calculate steric sea level change
 
@@ -80,20 +80,8 @@ def steric(
         Results of sea level change calculation
     """
 
-    # remap variable names, if passed
-    dset = dset.rename(varname_map)
-
-    # default coordinate names
-    tcoord, zcoord, zbounds = default_coords(coord_names)
-
-    # conduct some sanity checks on the input dataset
-    additional_vars = None if domain == "global" else [zbounds, "deptho"]
-    validate_dataset(dset, strict=strict, additional_vars=additional_vars)
-
-    # approximate pressure from depth coordinate
-    # 1 meter of depth is approximately 1 db or 10**4 Pa and also
-    # add in standard atmospheric pressure at the sea surface
-    pres = (dset[zcoord] * 1.0e4) + patm
+    tcoord = 'Time'
+    zcoord = 'nVertLevels'
 
     if reference is not None:
         assert isinstance(
@@ -102,8 +90,9 @@ def steric(
         if verbose:
             print("Using supplied reference state")
     else:
-        reference = setup_reference_state(
-            dset, patm=patm, eos=equation_of_state, coord_names=coord_names
+        reference = setup_e3sm_reference_state(
+            dset, patm=patm, eos=equation_of_state, coord_names=coord_names,
+            do_calc_rho=do_calc_rho
         )
         if verbose:
             print("Generating reference state from first timestep")
@@ -125,7 +114,15 @@ def steric(
         raise ValueError(f"Unknown variant '{variant}' passed to `steric`")
 
     # calculate in situ density
-    rho = calc_rho(thetao, so, pres, eos=equation_of_state)
+    if do_calc_rho:
+
+        # approximate pressure from depth coordinate
+        # 1 meter of depth is approximately 1 db or 10**4 Pa and also
+        # add in standard atmospheric pressure at the sea surface
+        pres = (dset[zcoord] * 1.0e4) + patm
+        rho = calc_rho(thetao, so, pres, eos=equation_of_state)
+    else:
+        rho = dset['rho']
 
     # return an Xarray Dataset with the results
     result = xr.Dataset()
@@ -159,7 +156,7 @@ def steric(
         result["delta_rho"] = delta_rho
         result["delta_rho"].encoding["dtype"] = dtype
 
-        dz = calc_dz(dset[zcoord], dset[zbounds], dset["deptho"])
+        dz = dset['dz']
         sealevel = (-1.0 / rhozero) * ((dz * delta_rho).sum(zcoord))
 
         sealevel = sealevel.transpose(*(tcoord, ...))
