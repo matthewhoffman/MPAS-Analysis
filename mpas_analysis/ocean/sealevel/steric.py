@@ -3,17 +3,17 @@
 import numpy as np
 import xarray as xr
 
-from momlevel.derived import calc_dz
-from momlevel.derived import calc_masso
-from momlevel.derived import calc_rho
-from momlevel.reference import setup_reference_state
-from momlevel.util import annual_average
-from momlevel.util import default_coords
-from momlevel.util import validate_dataset
+from mpas_analysis.ocean.sealevel.derived import calc_dz
+from mpas_analysis.ocean.sealevel.derived import calc_masso
+from mpas_analysis.ocean.sealevel.derived import calc_rho
+from mpas_analysis.ocean.sealevel.reference import setup_reference_state
+from mpas_analysis.ocean.sealevel.util import annual_average
+from mpas_analysis.ocean.sealevel.util import default_coords
+from mpas_analysis.ocean.sealevel.util import validate_dataset
 
 __all__ = ["halosteric", "steric", "thermosteric"]
 
-def steric(
+def calc_steric(
     dset,
     reference=None,
     coord_names=None,
@@ -90,7 +90,7 @@ def steric(
         if verbose:
             print("Using supplied reference state")
     else:
-        reference = setup_e3sm_reference_state(
+        reference = setup_reference_state(
             dset, patm=patm, eos=equation_of_state, coord_names=coord_names,
             do_calc_rho=do_calc_rho
         )

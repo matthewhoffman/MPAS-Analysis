@@ -1,6 +1,6 @@
 """ dynamic.py - module for funcs related to dynamic sea level / ssh """
 
-from momlevel.derived import calc_rho
+from mpas_analysis.ocean.sealevel.derived import calc_rho
 
 __all__ = ["inverse_barometer"]
 
